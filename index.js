@@ -836,7 +836,48 @@ function drawTronBackground() {
     ctx.fillStyle = bgGradient;
     ctx.fillRect(0, 0, getCanvasWidth(), getCanvasHeight());
     
-    // Animated 3D Grid Floor
+    if (isMobile) {
+        // MOBILE OPTIMIZED VERSION - Ultra light for 60 FPS
+        ctx.save();
+        const gridY = getCanvasHeight() - CONFIG.FLOOR_HEIGHT;
+        const time = frameCount * 0.03;
+        
+        // Simple grid lines - NO shadows for performance
+        ctx.strokeStyle = theme.gridColor;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.4;
+        
+        // Only 3 horizontal lines
+        for (let i = 0; i < 3; i++) {
+            const y = gridY + (i * 30);
+            if (y <= getCanvasHeight()) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(getCanvasWidth(), y);
+                ctx.stroke();
+            }
+        }
+        
+        // Fewer vertical lines with wider spacing
+        const gridSpacing = 60;
+        const offset = (time * 50) % gridSpacing;
+        const numLines = Math.ceil(getCanvasWidth() / gridSpacing) + 1;
+        for (let i = 0; i < numLines; i++) {
+            const x = i * gridSpacing - offset;
+            ctx.beginPath();
+            ctx.moveTo(x, gridY);
+            ctx.lineTo(x + 20, getCanvasHeight());
+            ctx.stroke();
+        }
+        
+        ctx.globalAlpha = 1;
+        ctx.restore();
+        
+        // Skip particles and data streams on mobile
+        return;
+    }
+    
+    // DESKTOP VERSION - Full effects
     ctx.save();
     const gridY = getCanvasHeight() - CONFIG.FLOOR_HEIGHT;
     const time = frameCount * 0.02;
@@ -957,6 +998,42 @@ function drawTronPipe(x, y, width, height) {
     const theme = THEMES.tron;
     
     ctx.save();
+    
+    if (isMobile) {
+        // MOBILE OPTIMIZED - Simple, no shadows
+        // Main pipe body
+        ctx.fillStyle = theme.pipe;
+        ctx.fillRect(x, y, width, height);
+        
+        // Simple glowing edges - NO shadow blur
+        ctx.strokeStyle = theme.pipeOutline;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, width, height);
+        
+        // Just 1 center line - NO animations
+        ctx.strokeStyle = theme.gridColor;
+        ctx.lineWidth = 1;
+        ctx.globalAlpha = 0.5;
+        const centerX = x + width / 2;
+        ctx.beginPath();
+        ctx.moveTo(centerX, y);
+        ctx.lineTo(centerX, y + height);
+        ctx.stroke();
+        
+        // Simple static energy core - NO pulsing
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = theme.accentColor;
+        const coreWidth = width * 0.25;
+        const coreHeight = 30;
+        const coreX = x + (width - coreWidth) / 2;
+        const coreY = y + height / 2 - coreHeight / 2;
+        ctx.fillRect(coreX, coreY, coreWidth, coreHeight);
+        
+        ctx.restore();
+        return;
+    }
+    
+    // DESKTOP VERSION - Full effects
     ctx.shadowColor = theme.pipeOutline;
     ctx.shadowBlur = 15;
     
@@ -1015,6 +1092,41 @@ function drawTronBird(x, y) {
     
     ctx.save();
     ctx.translate(x, y);
+    
+    if (isMobile) {
+        // MOBILE OPTIMIZED - Simple, no shadows
+        // Main body - diamond/angular shape
+        ctx.fillStyle = theme.gridColor;
+        ctx.beginPath();
+        ctx.moveTo(0, -12);
+        ctx.lineTo(12, 0);
+        ctx.lineTo(0, 12);
+        ctx.lineTo(-8, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Simple energy core - NO glow
+        ctx.fillStyle = theme.accentColor;
+        ctx.beginPath();
+        ctx.arc(0, 0, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Simple outline - NO glow
+        ctx.strokeStyle = theme.gridColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -12);
+        ctx.lineTo(12, 0);
+        ctx.lineTo(0, 12);
+        ctx.lineTo(-8, 0);
+        ctx.closePath();
+        ctx.stroke();
+        
+        ctx.restore();
+        return;
+    }
+    
+    // DESKTOP VERSION - Full effects with shadows
     ctx.shadowColor = theme.gridColor;
     ctx.shadowBlur = 20;
     
