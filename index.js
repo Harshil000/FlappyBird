@@ -19,13 +19,17 @@ const CONFIG = {
 // Themes
 const THEMES = {
     default: {
-        sky: ['#4ec0ca', '#87CEEB'],
-        ground: '#ded895',
-        groundAccent: '#c9c05a',
-        pipe: '#5cb85c',
-        pipeHighlight: '#6ecf6e',
-        pipeShadow: '#4a9d4a',
-        pipeOutline: '#4CAF50'
+        sky: ['#87CEEB', '#B0E0E6', '#ADD8E6', '#E0F6FF'],
+        ground: '#8B4513',
+        groundAccent: '#654321',
+        grassColor: '#228B22',
+        grassLight: '#32CD32',
+        grassDark: '#006400',
+        pipe: '#FF6347',
+        pipeHighlight: '#FF7F50',
+        pipeShadow: '#DC143C',
+        pipeOutline: '#B22222',
+        flowerColors: ['#FFD700', '#FF69B4', '#FF1493', '#FFA500', '#9370DB']
     },
     night: {
         sky: ['#0a1128', '#1a1f3a', '#2e3856'],
@@ -572,12 +576,23 @@ function drawBackground() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height - CONFIG.FLOOR_HEIGHT);
     
-    // Clouds (for day theme only)
+    // Clouds and butterflies (for day theme only)
     if (gameState.currentTheme === 'default') {
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
-        drawCloud(100 + (frameCount * 0.3 % 500), 100);
-        drawCloud(300 + (frameCount * 0.2 % 600), 150);
-        drawCloud(200 + (frameCount * 0.25 % 400), 200);
+        // Fluffy clouds with better shapes
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+        ctx.shadowBlur = 5;
+        drawFluffyCloud(100 + (frameCount * 0.3 % 600), 80);
+        drawFluffyCloud(300 + (frameCount * 0.2 % 700), 140);
+        drawFluffyCloud(200 + (frameCount * 0.25 % 500), 200);
+        ctx.shadowBlur = 0;
+        
+        // Sun with rays
+        drawSunWithRays(canvas.width - 100, 80);
+        
+        // Flying butterflies
+        drawButterfly(150 + Math.sin(frameCount * 0.03) * 30, 150 + Math.cos(frameCount * 0.02) * 20);
+        drawButterfly(250 + Math.cos(frameCount * 0.025) * 25, 180 + Math.sin(frameCount * 0.03) * 15);
     }
     
     // Stars and moon (for night theme)
@@ -627,49 +642,167 @@ function drawBackground() {
     }
     
     // Ground with texture
-    const groundGradient = ctx.createLinearGradient(0, canvas.height - CONFIG.FLOOR_HEIGHT, 0, canvas.height);
-    groundGradient.addColorStop(0, theme.ground);
-    groundGradient.addColorStop(1, theme.groundAccent);
-    
-    ctx.fillStyle = groundGradient;
-    ctx.fillRect(0, canvas.height - CONFIG.FLOOR_HEIGHT, canvas.width, CONFIG.FLOOR_HEIGHT);
-    
-    // Ground pattern (grass-like texture)
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
-    ctx.lineWidth = 2;
-    const offset = (frameCount * 2) % 40;
-    for (let i = -offset; i < canvas.width; i += 20) {
-        // Vertical lines
-        ctx.beginPath();
-        ctx.moveTo(i, canvas.height - CONFIG.FLOOR_HEIGHT);
-        ctx.lineTo(i, canvas.height);
-        ctx.stroke();
+    if (gameState.currentTheme === 'default') {
+        // Creative day theme ground with grass and flowers
+        drawCreativeDayGround(theme);
+    } else {
+        // Standard ground for other themes
+        const groundGradient = ctx.createLinearGradient(0, canvas.height - CONFIG.FLOOR_HEIGHT, 0, canvas.height);
+        groundGradient.addColorStop(0, theme.ground);
+        groundGradient.addColorStop(1, theme.groundAccent);
         
-        // Small grass marks
-        if (i % 40 === 0) {
+        ctx.fillStyle = groundGradient;
+        ctx.fillRect(0, canvas.height - CONFIG.FLOOR_HEIGHT, canvas.width, CONFIG.FLOOR_HEIGHT);
+        
+        // Ground pattern (grass-like texture)
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.lineWidth = 2;
+        const offset = (frameCount * 2) % 40;
+        for (let i = -offset; i < canvas.width; i += 20) {
+            // Vertical lines
             ctx.beginPath();
             ctx.moveTo(i, canvas.height - CONFIG.FLOOR_HEIGHT);
-            ctx.lineTo(i + 5, canvas.height - CONFIG.FLOOR_HEIGHT + 10);
+            ctx.lineTo(i, canvas.height);
             ctx.stroke();
+            
+            // Small grass marks
+            if (i % 40 === 0) {
+                ctx.beginPath();
+                ctx.moveTo(i, canvas.height - CONFIG.FLOOR_HEIGHT);
+                ctx.lineTo(i + 5, canvas.height - CONFIG.FLOOR_HEIGHT + 10);
+                ctx.stroke();
+            }
+        }
+        
+        // Ground top border
+        ctx.strokeStyle = theme.groundAccent;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - CONFIG.FLOOR_HEIGHT);
+        ctx.lineTo(canvas.width, canvas.height - CONFIG.FLOOR_HEIGHT);
+        ctx.stroke();
+    }
+}
+
+function drawFluffyCloud(x, y) {
+    ctx.beginPath();
+    ctx.arc(x, y, 25, 0, Math.PI * 2);
+    ctx.arc(x + 20, y - 8, 30, 0, Math.PI * 2);
+    ctx.arc(x + 45, y - 5, 28, 0, Math.PI * 2);
+    ctx.arc(x + 65, y, 25, 0, Math.PI * 2);
+    ctx.arc(x + 30, y + 10, 32, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawSunWithRays(x, y) {
+    // Sun circle
+    ctx.fillStyle = '#FFD700';
+    ctx.shadowColor = '#FFA500';
+    ctx.shadowBlur = 30;
+    ctx.beginPath();
+    ctx.arc(x, y, 40, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    
+    // Sun rays
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 12; i++) {
+        const angle = (i * 30 + frameCount * 0.5) * Math.PI / 180;
+        const rayLength = 55 + Math.sin(frameCount * 0.1 + i) * 5;
+        ctx.beginPath();
+        ctx.moveTo(x + Math.cos(angle) * 45, y + Math.sin(angle) * 45);
+        ctx.lineTo(x + Math.cos(angle) * rayLength, y + Math.sin(angle) * rayLength);
+        ctx.stroke();
+    }
+}
+
+function drawButterfly(x, y) {
+    const wingFlap = Math.sin(frameCount * 0.2) * 0.3;
+    
+    ctx.save();
+    ctx.translate(x, y);
+    
+    // Left wing
+    ctx.fillStyle = '#FF69B4';
+    ctx.beginPath();
+    ctx.ellipse(-5, 0, 8, 12 + wingFlap * 5, -0.3 - wingFlap, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Right wing
+    ctx.fillStyle = '#FF1493';
+    ctx.beginPath();
+    ctx.ellipse(5, 0, 8, 12 + wingFlap * 5, 0.3 + wingFlap, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Body
+    ctx.fillStyle = '#000';
+    ctx.fillRect(-1, -8, 2, 16);
+    
+    // Antennae
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -8);
+    ctx.lineTo(-3, -12);
+    ctx.moveTo(0, -8);
+    ctx.lineTo(3, -12);
+    ctx.stroke();
+    
+    ctx.restore();
+}
+
+function drawCreativeDayGround(theme) {
+    const groundY = canvas.height - CONFIG.FLOOR_HEIGHT;
+    
+    // Dirt base
+    const groundGradient = ctx.createLinearGradient(0, groundY, 0, canvas.height);
+    groundGradient.addColorStop(0, theme.ground);
+    groundGradient.addColorStop(1, theme.groundAccent);
+    ctx.fillStyle = groundGradient;
+    ctx.fillRect(0, groundY, canvas.width, CONFIG.FLOOR_HEIGHT);
+    
+    // Grass layer
+    ctx.fillStyle = theme.grassColor;
+    ctx.fillRect(0, groundY, canvas.width, 25);
+    
+    // Animated grass blades
+    const grassOffset = (frameCount * 2) % 15;
+    for (let i = -grassOffset; i < canvas.width + 15; i += 8) {
+        // Tall grass blade
+        ctx.fillStyle = theme.grassDark;
+        ctx.beginPath();
+        ctx.moveTo(i, groundY + 25);
+        ctx.lineTo(i - 1, groundY + 5);
+        ctx.lineTo(i + 1, groundY + 25);
+        ctx.fill();
+        
+        // Medium grass blade
+        ctx.fillStyle = theme.grassColor;
+        ctx.beginPath();
+        ctx.moveTo(i + 4, groundY + 25);
+        ctx.lineTo(i + 3, groundY + 12);
+        ctx.lineTo(i + 5, groundY + 25);
+        ctx.fill();
+        
+        // Light grass blade
+        if (i % 16 === 0) {
+            ctx.fillStyle = theme.grassLight;
+            ctx.beginPath();
+            ctx.moveTo(i + 2, groundY + 25);
+            ctx.lineTo(i + 1, groundY + 8);
+            ctx.lineTo(i + 3, groundY + 25);
+            ctx.fill();
         }
     }
     
-    // Ground top border
-    ctx.strokeStyle = theme.groundAccent;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    ctx.moveTo(0, canvas.height - CONFIG.FLOOR_HEIGHT);
-    ctx.lineTo(canvas.width, canvas.height - CONFIG.FLOOR_HEIGHT);
-    ctx.stroke();
-}
-
-function drawCloud(x, y) {
-    ctx.beginPath();
-    ctx.arc(x, y, 20, 0, Math.PI * 2);
-    ctx.arc(x + 20, y, 28, 0, Math.PI * 2);
-    ctx.arc(x + 40, y, 20, 0, Math.PI * 2);
-    ctx.arc(x + 15, y - 10, 20, 0, Math.PI * 2);
-    ctx.fill();
+    // Flowers
+    const flowerOffset = (frameCount * 2) % 80;
+    for (let i = -flowerOffset + 20; i < canvas.width + 80; i += 80) {
+        const flowerColor = theme.flowerColors[Math.floor(i / 80) % theme.flowerColors.length];
+        drawFlower(i, groundY + 15, flowerColor);
+    }
 }
 
 function drawBirdSilhouette(x, y) {
@@ -750,6 +883,30 @@ function drawPixelCloud(x, y) {
     ctx.fillRect(x, y + 16, 48, 8);
     ctx.fillRect(x + 8, y + 24, 32, 8);
     ctx.fillRect(x + 16, y + 32, 16, 8);
+}
+
+function drawFlower(x, y, color) {
+    // Stem
+    ctx.fillStyle = '#2E7D32';
+    ctx.fillRect(x, y, 2, 15);
+    
+    // Petals
+    ctx.fillStyle = color;
+    const petalRadius = 4;
+    for (let i = 0; i < 5; i++) {
+        const angle = (i * 72 - 90) * Math.PI / 180;
+        const petalX = x + 1 + Math.cos(angle) * 5;
+        const petalY = y + Math.sin(angle) * 5;
+        ctx.beginPath();
+        ctx.arc(petalX, petalY, petalRadius, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Center
+    ctx.fillStyle = '#FFD700';
+    ctx.beginPath();
+    ctx.arc(x + 1, y, 3, 0, Math.PI * 2);
+    ctx.fill();
 }
 
 // Game Loop
