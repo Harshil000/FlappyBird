@@ -224,6 +224,12 @@ class Bird {
         const colorScheme = BIRD_COLORS[gameState.currentBird];
         const rotation = Math.min(Math.max(this.velocity * 0.05, -0.5), 0.5);
         
+        // Use classic pixel art style for classic theme
+        if (gameState.currentTheme === 'classic') {
+            this.drawClassicBird();
+            return;
+        }
+        
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(rotation);
@@ -288,6 +294,76 @@ class Bird {
         ctx.restore();
     }
     
+    drawClassicBird() {
+        // Classic Flappy Bird pixel art style
+        const rotation = Math.min(Math.max(this.velocity * 0.08, -0.5), 0.5);
+        
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(rotation);
+        
+        // Disable image smoothing for pixelated look
+        ctx.imageSmoothingEnabled = false;
+        
+        const wingFlap = Math.floor(frameCount / 10) % 2;
+        
+        // Body (oval shape)
+        ctx.fillStyle = '#FFC700';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 17, 13, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // White belly
+        ctx.fillStyle = '#FFFAE5';
+        ctx.beginPath();
+        ctx.ellipse(2, 5, 10, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Wing - flapping animation
+        ctx.fillStyle = '#FFA500';
+        if (wingFlap === 0) {
+            ctx.fillRect(-8, -2, 12, 6);
+        } else {
+            ctx.fillRect(-8, 2, 12, 6);
+        }
+        
+        // Eye white
+        ctx.fillStyle = 'white';
+        ctx.fillRect(8, -8, 8, 8);
+        
+        // Eye pupil
+        ctx.fillStyle = 'black';
+        ctx.fillRect(12, -6, 4, 6);
+        
+        // Beak top
+        ctx.fillStyle = '#FF8800';
+        ctx.beginPath();
+        ctx.moveTo(15, -4);
+        ctx.lineTo(25, -6);
+        ctx.lineTo(25, -2);
+        ctx.lineTo(15, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Beak bottom
+        ctx.beginPath();
+        ctx.moveTo(15, 0);
+        ctx.lineTo(25, -2);
+        ctx.lineTo(23, 2);
+        ctx.lineTo(15, 4);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Red cheek
+        ctx.fillStyle = '#FF6B6B';
+        ctx.globalAlpha = 0.5;
+        ctx.fillRect(5, 3, 6, 4);
+        ctx.globalAlpha = 1;
+        
+        ctx.restore();
+        ctx.imageSmoothingEnabled = true;
+    }
+    
     checkCollision() {
         // Ground collision
         if (this.y + this.size > canvas.height - CONFIG.FLOOR_HEIGHT) {
@@ -326,6 +402,12 @@ class Pipe {
     draw() {
         const theme = THEMES[gameState.currentTheme];
         
+        // Use classic pixel art pipes for classic theme
+        if (gameState.currentTheme === 'classic') {
+            this.drawClassicPipe();
+            return;
+        }
+        
         // Add glow effect for night theme
         if (theme.glow) {
             ctx.shadowColor = '#4a9eff';
@@ -342,6 +424,69 @@ class Pipe {
         
         // Reset shadow
         ctx.shadowBlur = 0;
+    }
+    
+    drawClassicPipe() {
+        // Classic Flappy Bird pipe style - exact replica
+        ctx.imageSmoothingEnabled = false;
+        
+        const pipeWidth = CONFIG.PIPE_WIDTH;
+        const capHeight = 28;
+        const capWidth = pipeWidth + 6;
+        
+        // Top pipe body
+        ctx.fillStyle = '#5EBF58';
+        ctx.fillRect(this.x, 0, pipeWidth, this.topHeight - capHeight);
+        
+        // Top pipe dark stripe (left)
+        ctx.fillStyle = '#3F8C3A';
+        ctx.fillRect(this.x, 0, 4, this.topHeight - capHeight);
+        
+        // Top pipe light stripe (right)
+        ctx.fillStyle = '#73D36A';
+        ctx.fillRect(this.x + pipeWidth - 4, 0, 4, this.topHeight - capHeight);
+        
+        // Top pipe cap
+        ctx.fillStyle = '#5EBF58';
+        ctx.fillRect(this.x - 3, this.topHeight - capHeight, capWidth, capHeight);
+        
+        // Cap dark stripe (left)
+        ctx.fillStyle = '#3F8C3A';
+        ctx.fillRect(this.x - 3, this.topHeight - capHeight, 4, capHeight);
+        
+        // Cap light stripe (right)
+        ctx.fillStyle = '#73D36A';
+        ctx.fillRect(this.x + pipeWidth - 1, this.topHeight - capHeight, 4, capHeight);
+        
+        // Bottom pipe
+        const bottomY = this.topHeight + this.gap;
+        const bottomHeight = canvas.height - bottomY - CONFIG.FLOOR_HEIGHT;
+        
+        // Bottom pipe cap
+        ctx.fillStyle = '#5EBF58';
+        ctx.fillRect(this.x - 3, bottomY, capWidth, capHeight);
+        
+        // Cap dark stripe (left)
+        ctx.fillStyle = '#3F8C3A';
+        ctx.fillRect(this.x - 3, bottomY, 4, capHeight);
+        
+        // Cap light stripe (right)
+        ctx.fillStyle = '#73D36A';
+        ctx.fillRect(this.x + pipeWidth - 1, bottomY, 4, capHeight);
+        
+        // Bottom pipe body
+        ctx.fillStyle = '#5EBF58';
+        ctx.fillRect(this.x, bottomY + capHeight, pipeWidth, bottomHeight - capHeight);
+        
+        // Bottom pipe dark stripe (left)
+        ctx.fillStyle = '#3F8C3A';
+        ctx.fillRect(this.x, bottomY + capHeight, 4, bottomHeight - capHeight);
+        
+        // Bottom pipe light stripe (right)
+        ctx.fillStyle = '#73D36A';
+        ctx.fillRect(this.x + pipeWidth - 4, bottomY + capHeight, 4, bottomHeight - capHeight);
+        
+        ctx.imageSmoothingEnabled = true;
     }
     
     drawPipe(x, y, width, height, theme) {
@@ -412,6 +557,12 @@ class Pipe {
 function drawBackground() {
     const theme = THEMES[gameState.currentTheme];
     
+    // Classic background
+    if (gameState.currentTheme === 'classic') {
+        drawClassicBackground();
+        return;
+    }
+    
     // Sky gradient
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height - CONFIG.FLOOR_HEIGHT);
     if (Array.isArray(theme.sky)) {
@@ -426,8 +577,8 @@ function drawBackground() {
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height - CONFIG.FLOOR_HEIGHT);
     
-    // Clouds (for day and classic theme)
-    if (gameState.currentTheme === 'default' || gameState.currentTheme === 'classic') {
+    // Clouds (for day theme only)
+    if (gameState.currentTheme === 'default') {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
         drawCloud(100 + (frameCount * 0.3 % 500), 100);
         drawCloud(300 + (frameCount * 0.2 % 600), 150);
@@ -535,6 +686,62 @@ function drawBirdSilhouette(x, y) {
     ctx.lineTo(x + 10, y + 3);
     ctx.lineTo(x + 18, y + 8);
     ctx.stroke();
+}
+
+function drawClassicBackground() {
+    // Classic Flappy Bird background - exact replica
+    ctx.imageSmoothingEnabled = false;
+    
+    // Sky - solid cyan color
+    ctx.fillStyle = '#4EC0CA';
+    ctx.fillRect(0, 0, canvas.width, canvas.height - CONFIG.FLOOR_HEIGHT);
+    
+    // Clouds - simple white pixelated clouds
+    ctx.fillStyle = 'white';
+    const cloudOffset = (frameCount * 0.5) % 150;
+    
+    // Cloud 1
+    drawPixelCloud(50 - cloudOffset, 80);
+    drawPixelCloud(200 - cloudOffset, 80);
+    drawPixelCloud(350 - cloudOffset, 80);
+    
+    // Cloud 2
+    drawPixelCloud(120 - cloudOffset, 140);
+    drawPixelCloud(270 - cloudOffset, 140);
+    drawPixelCloud(420 - cloudOffset, 140);
+    
+    // Ground - tan/beige color with pattern
+    ctx.fillStyle = '#DED895';
+    ctx.fillRect(0, canvas.height - CONFIG.FLOOR_HEIGHT, canvas.width, CONFIG.FLOOR_HEIGHT);
+    
+    // Ground texture - dark stripes
+    ctx.fillStyle = '#C2BC6C';
+    const groundOffset = (frameCount * 2) % 30;
+    for (let i = -groundOffset; i < canvas.width; i += 30) {
+        ctx.fillRect(i, canvas.height - CONFIG.FLOOR_HEIGHT, 15, CONFIG.FLOOR_HEIGHT);
+    }
+    
+    // Ground top edge - green grass
+    ctx.fillStyle = '#5EBF58';
+    ctx.fillRect(0, canvas.height - CONFIG.FLOOR_HEIGHT, canvas.width, 15);
+    
+    // Grass details
+    ctx.fillStyle = '#3F8C3A';
+    for (let i = -groundOffset; i < canvas.width; i += 15) {
+        ctx.fillRect(i, canvas.height - CONFIG.FLOOR_HEIGHT + 5, 3, 8);
+        ctx.fillRect(i + 8, canvas.height - CONFIG.FLOOR_HEIGHT + 3, 3, 10);
+    }
+    
+    ctx.imageSmoothingEnabled = true;
+}
+
+function drawPixelCloud(x, y) {
+    // Pixelated cloud shape
+    ctx.fillRect(x + 8, y, 24, 8);
+    ctx.fillRect(x + 4, y + 8, 32, 8);
+    ctx.fillRect(x, y + 16, 40, 8);
+    ctx.fillRect(x + 4, y + 24, 32, 8);
+    ctx.fillRect(x + 8, y + 32, 24, 8);
 }
 
 // Game Loop
