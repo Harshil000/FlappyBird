@@ -1,18 +1,23 @@
+// Mobile Detection
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
+                 window.innerWidth <= 768 || 
+                 ('ontouchstart' in window);
+
 // Game Configuration
 const CONFIG = {
-    GRAVITY: 0.2,  // Much slower gravity for gentle falling
-    JUMP_FORCE: -4.2,  // Reduced jump height for more control
+    GRAVITY: isMobile ? 0.35 : 0.2,  // Faster gravity on mobile for snappier feel
+    JUMP_FORCE: isMobile ? -6.5 : -4.2,  // Stronger jump on mobile
     BIRD_SIZE: 30,
     PIPE_WIDTH: 60,
-    PIPE_GAP: 220,  // Larger gap between top and bottom pipes for easier start
-    PIPE_SPEED: 1.5,  // Very slow starting speed
+    PIPE_GAP: isMobile ? 240 : 220,  // Slightly larger gap on mobile
+    PIPE_SPEED: isMobile ? 2.5 : 1.5,  // Faster starting speed on mobile
     SPAWN_INTERVAL: 150,  // More distance between pipes at start
     FLOOR_HEIGHT: 100,
     // Difficulty progression
-    SPEED_INCREASE_PER_SCORE: 0.2,  // Faster speed increase per point
-    MAX_SPEED: 8,  // Maximum pipe speed
+    SPEED_INCREASE_PER_SCORE: isMobile ? 0.25 : 0.2,  // Slightly faster progression on mobile
+    MAX_SPEED: isMobile ? 9 : 8,  // Higher max speed on mobile
     MIN_SPAWN_INTERVAL: 50,  // Minimum time between pipes
-    MIN_PIPE_GAP: 160,  // Minimum gap between pipes (gets harder)
+    MIN_PIPE_GAP: isMobile ? 180 : 160,  // Larger minimum gap on mobile
     GAP_DECREASE_PER_SCORE: 2  // How much gap decreases per point
 };
 
@@ -238,15 +243,44 @@ function playGameOverSound() {
 // Initialize Canvas Size
 function resizeCanvas() {
     const container = document.getElementById('game-container');
-    canvas.width = container.clientWidth;
-    canvas.height = container.clientHeight;
+    const dpr = window.devicePixelRatio || 1;
+    
+    // Set display size (css pixels)
+    const displayWidth = container.clientWidth;
+    const displayHeight = container.clientHeight;
+    
+    // Store display dimensions for game logic first
+    canvas.displayWidth = displayWidth;
+    canvas.displayHeight = displayHeight;
+    
+    // Set actual size in memory (scaled for retina displays)
+    canvas.width = displayWidth * dpr;
+    canvas.height = displayHeight * dpr;
+    
+    // Normalize coordinate system to use css pixels
+    // This resets the transform, so no accumulation on resize
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    
+    // Update canvas style to match container
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
+}
+
+// Helper functions for canvas dimensions
+function getCanvasWidth() {
+    return canvas.displayWidth || getCanvasWidth();
+}
+
+function getCanvasHeight() {
+    return canvas.displayHeight || getCanvasHeight();
 }
 
 // Bird Class
 class Bird {
     constructor() {
-        this.x = canvas.width / 4;
-        this.y = canvas.height / 2;
+        this.x = getCanvasWidth() / 4;
+        this.y = getCanvasHeight() / 2;
         this.velocity = 0;
         this.size = CONFIG.BIRD_SIZE;
     }
@@ -368,7 +402,7 @@ class Bird {
     
     checkCollision() {
         // Ground collision
-        if (this.y + this.size > canvas.height - CONFIG.FLOOR_HEIGHT) {
+        if (this.y + this.size > getCanvasHeight() - CONFIG.FLOOR_HEIGHT) {
             return true;
         }
         
@@ -391,9 +425,9 @@ class Bird {
 // Pipe Class
 class Pipe {
     constructor() {
-        this.x = canvas.width;
+        this.x = getCanvasWidth();
         this.gap = gameState.currentPipeGap;  // Use dynamic gap
-        this.topHeight = Math.random() * (canvas.height - this.gap - CONFIG.FLOOR_HEIGHT - 100) + 50;
+        this.topHeight = Math.random() * (getCanvasHeight() - this.gap - CONFIG.FLOOR_HEIGHT - 100) + 50;
         this.scored = false;
     }
     
@@ -410,7 +444,7 @@ class Pipe {
             drawTronPipe(this.x, 0, CONFIG.PIPE_WIDTH, this.topHeight);
             // Bottom pipe
             const bottomY = this.topHeight + this.gap;
-            const bottomHeight = canvas.height - bottomY - CONFIG.FLOOR_HEIGHT;
+            const bottomHeight = getCanvasHeight() - bottomY - CONFIG.FLOOR_HEIGHT;
             drawTronPipe(this.x, bottomY, CONFIG.PIPE_WIDTH, bottomHeight);
             return;
         }
@@ -432,7 +466,7 @@ class Pipe {
         
         // Draw bottom pipe with 3D effect
         const bottomY = this.topHeight + this.gap;
-        const bottomHeight = canvas.height - bottomY - CONFIG.FLOOR_HEIGHT;
+        const bottomHeight = getCanvasHeight() - bottomY - CONFIG.FLOOR_HEIGHT;
         this.drawPipe(this.x, bottomY, CONFIG.PIPE_WIDTH, bottomHeight, theme);
         
         // Reset shadow
@@ -483,7 +517,7 @@ class Pipe {
         
         // Bottom pipe
         const bottomY = this.topHeight + this.gap;
-        const bottomHeight = canvas.height - bottomY - CONFIG.FLOOR_HEIGHT;
+        const bottomHeight = getCanvasHeight() - bottomY - CONFIG.FLOOR_HEIGHT;
         
         // Bottom pipe cap
         ctx.fillStyle = '#65BD58';
@@ -601,7 +635,7 @@ function drawBackground() {
     }
     
     // Sky gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height - CONFIG.FLOOR_HEIGHT);
+    const gradient = ctx.createLinearGradient(0, 0, 0, getCanvasHeight() - CONFIG.FLOOR_HEIGHT);
     if (Array.isArray(theme.sky)) {
         theme.sky.forEach((color, index) => {
             gradient.addColorStop(index / (theme.sky.length - 1), color);
@@ -612,7 +646,7 @@ function drawBackground() {
     }
     
     ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height - CONFIG.FLOOR_HEIGHT);
+    ctx.fillRect(0, 0, getCanvasWidth(), getCanvasHeight() - CONFIG.FLOOR_HEIGHT);
     
     // Clouds and butterflies (for day theme only)
     if (gameState.currentTheme === 'default') {
@@ -626,7 +660,7 @@ function drawBackground() {
         ctx.shadowBlur = 0;
         
         // Sun with rays
-        drawSunWithRays(canvas.width - 100, 80);
+        drawSunWithRays(getCanvasWidth() - 100, 80);
         
         // Flying butterflies
         drawButterfly(150 + Math.sin(frameCount * 0.03) * 30, 150 + Math.cos(frameCount * 0.02) * 20);
@@ -640,15 +674,15 @@ function drawBackground() {
         ctx.shadowColor = '#fff';
         ctx.shadowBlur = 30;
         ctx.beginPath();
-        ctx.arc(canvas.width - 80, 80, 35, 0, Math.PI * 2);
+        ctx.arc(getCanvasWidth() - 80, 80, 35, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
         
         // Stars with twinkling effect
         ctx.fillStyle = 'white';
         for (let i = 0; i < 60; i++) {
-            const x = (i * 37) % canvas.width;
-            const y = (i * 53) % (canvas.height - CONFIG.FLOOR_HEIGHT - 50);
+            const x = (i * 37) % getCanvasWidth();
+            const y = (i * 53) % (getCanvasHeight() - CONFIG.FLOOR_HEIGHT - 50);
             const twinkle = Math.abs(Math.sin(frameCount * 0.05 + i));
             const size = twinkle * 2 + 1;
             
@@ -666,13 +700,13 @@ function drawBackground() {
         ctx.shadowColor = '#FF4500';
         ctx.shadowBlur = 40;
         ctx.beginPath();
-        ctx.arc(canvas.width / 2, sunY, 50, 0, Math.PI * 2);
+        ctx.arc(getCanvasWidth() / 2, sunY, 50, 0, Math.PI * 2);
         ctx.fill();
         ctx.shadowBlur = 0;
         
         // Sun reflection on horizon
         ctx.fillStyle = 'rgba(255, 99, 71, 0.3)';
-        ctx.fillRect(0, canvas.height - CONFIG.FLOOR_HEIGHT - 50, canvas.width, 50);
+        ctx.fillRect(0, getCanvasHeight() - CONFIG.FLOOR_HEIGHT - 50, getCanvasWidth(), 50);
         
         // Silhouette birds
         drawBirdSilhouette(150 + Math.sin(frameCount * 0.02) * 20, 100);
@@ -685,29 +719,29 @@ function drawBackground() {
         drawCreativeDayGround(theme);
     } else {
         // Standard ground for other themes
-        const groundGradient = ctx.createLinearGradient(0, canvas.height - CONFIG.FLOOR_HEIGHT, 0, canvas.height);
+        const groundGradient = ctx.createLinearGradient(0, getCanvasHeight() - CONFIG.FLOOR_HEIGHT, 0, getCanvasHeight());
         groundGradient.addColorStop(0, theme.ground);
         groundGradient.addColorStop(1, theme.groundAccent);
         
         ctx.fillStyle = groundGradient;
-        ctx.fillRect(0, canvas.height - CONFIG.FLOOR_HEIGHT, canvas.width, CONFIG.FLOOR_HEIGHT);
+        ctx.fillRect(0, getCanvasHeight() - CONFIG.FLOOR_HEIGHT, getCanvasWidth(), CONFIG.FLOOR_HEIGHT);
         
         // Ground pattern (grass-like texture)
         ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
         ctx.lineWidth = 2;
         const offset = (frameCount * 2) % 40;
-        for (let i = -offset; i < canvas.width; i += 20) {
+        for (let i = -offset; i < getCanvasWidth(); i += 20) {
             // Vertical lines
             ctx.beginPath();
-            ctx.moveTo(i, canvas.height - CONFIG.FLOOR_HEIGHT);
-            ctx.lineTo(i, canvas.height);
+            ctx.moveTo(i, getCanvasHeight() - CONFIG.FLOOR_HEIGHT);
+            ctx.lineTo(i, getCanvasHeight());
             ctx.stroke();
             
             // Small grass marks
             if (i % 40 === 0) {
                 ctx.beginPath();
-                ctx.moveTo(i, canvas.height - CONFIG.FLOOR_HEIGHT);
-                ctx.lineTo(i + 5, canvas.height - CONFIG.FLOOR_HEIGHT + 10);
+                ctx.moveTo(i, getCanvasHeight() - CONFIG.FLOOR_HEIGHT);
+                ctx.lineTo(i + 5, getCanvasHeight() - CONFIG.FLOOR_HEIGHT + 10);
                 ctx.stroke();
             }
         }
@@ -716,8 +750,8 @@ function drawBackground() {
         ctx.strokeStyle = theme.groundAccent;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(0, canvas.height - CONFIG.FLOOR_HEIGHT);
-        ctx.lineTo(canvas.width, canvas.height - CONFIG.FLOOR_HEIGHT);
+        ctx.moveTo(0, getCanvasHeight() - CONFIG.FLOOR_HEIGHT);
+        ctx.lineTo(getCanvasWidth(), getCanvasHeight() - CONFIG.FLOOR_HEIGHT);
         ctx.stroke();
     }
 }
@@ -795,16 +829,16 @@ function drawTronBackground() {
     const theme = THEMES.tron;
     
     // Deep dark gradient background
-    const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, getCanvasHeight());
     bgGradient.addColorStop(0, theme.sky[0]);
     bgGradient.addColorStop(0.5, theme.sky[1]);
     bgGradient.addColorStop(1, theme.sky[2]);
     ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, getCanvasWidth(), getCanvasHeight());
     
     // Animated 3D Grid Floor
     ctx.save();
-    const gridY = canvas.height - CONFIG.FLOOR_HEIGHT;
+    const gridY = getCanvasHeight() - CONFIG.FLOOR_HEIGHT;
     const time = frameCount * 0.02;
     
     // Perspective grid lines - receding into distance
@@ -817,28 +851,28 @@ function drawTronBackground() {
     for (let i = 0; i < 8; i++) {
         const yOffset = i * 15;
         const y = gridY + yOffset;
-        if (y > canvas.height) continue;
+        if (y > getCanvasHeight()) continue;
         
         const alpha = 1 - (i / 8) * 0.7;
         ctx.globalAlpha = alpha;
         
         ctx.beginPath();
         ctx.moveTo(0, y);
-        ctx.lineTo(canvas.width, y);
+        ctx.lineTo(getCanvasWidth(), y);
         ctx.stroke();
     }
     
     // Vertical grid lines with animated movement
     const gridSpacing = 30;
     const offset = (time * 50) % gridSpacing;
-    for (let i = -1; i < canvas.width / gridSpacing + 2; i++) {
+    for (let i = -1; i < getCanvasWidth() / gridSpacing + 2; i++) {
         const x = i * gridSpacing - offset;
         const alpha = 0.6;
         ctx.globalAlpha = alpha;
         
         ctx.beginPath();
         ctx.moveTo(x, gridY);
-        ctx.lineTo(x + gridSpacing * 0.3, canvas.height);
+        ctx.lineTo(x + gridSpacing * 0.3, getCanvasHeight());
         ctx.stroke();
     }
     
@@ -850,8 +884,8 @@ function drawTronBackground() {
     ctx.shadowColor = theme.accentColor;
     ctx.shadowBlur = 10;
     for (let i = 0; i < 15; i++) {
-        const x = ((i * 73 + frameCount * 2) % canvas.width);
-        const y = ((i * 97 + frameCount * 0.5) % (canvas.height - CONFIG.FLOOR_HEIGHT));
+        const x = ((i * 73 + frameCount * 2) % getCanvasWidth());
+        const y = ((i * 97 + frameCount * 0.5) % (getCanvasHeight() - CONFIG.FLOOR_HEIGHT));
         const size = Math.sin(frameCount * 0.1 + i) * 2 + 3;
         const alpha = Math.abs(Math.sin(frameCount * 0.05 + i * 0.5)) * 0.8;
         
@@ -862,9 +896,9 @@ function drawTronBackground() {
     // Scanning lines effect
     ctx.globalAlpha = 0.05;
     ctx.fillStyle = theme.gridColor;
-    const scanY = (frameCount * 3) % canvas.height;
-    ctx.fillRect(0, scanY, canvas.width, 2);
-    ctx.fillRect(0, (scanY + canvas.height / 2) % canvas.height, canvas.width, 2);
+    const scanY = (frameCount * 3) % getCanvasHeight();
+    ctx.fillRect(0, scanY, getCanvasWidth(), 2);
+    ctx.fillRect(0, (scanY + getCanvasHeight() / 2) % getCanvasHeight(), getCanvasWidth(), 2);
     
     ctx.globalAlpha = 1;
     ctx.shadowBlur = 0;
@@ -879,9 +913,9 @@ function drawDataStreams() {
     ctx.save();
     
     for (let i = 0; i < 3; i++) {
-        const x = (i * 150 + frameCount * 1.5) % (canvas.width + 100) - 50;
+        const x = (i * 150 + frameCount * 1.5) % (getCanvasWidth() + 100) - 50;
         const startY = 50;
-        const endY = canvas.height - CONFIG.FLOOR_HEIGHT - 50;
+        const endY = getCanvasHeight() - CONFIG.FLOOR_HEIGHT - 50;
         
         // Digital code stream
         const gradient = ctx.createLinearGradient(0, startY, 0, endY);
@@ -1049,22 +1083,22 @@ function drawTronBird(x, y) {
 }
 
 function drawCreativeDayGround(theme) {
-    const groundY = canvas.height - CONFIG.FLOOR_HEIGHT;
+    const groundY = getCanvasHeight() - CONFIG.FLOOR_HEIGHT;
     
     // Dirt base
-    const groundGradient = ctx.createLinearGradient(0, groundY, 0, canvas.height);
+    const groundGradient = ctx.createLinearGradient(0, groundY, 0, getCanvasHeight());
     groundGradient.addColorStop(0, theme.ground);
     groundGradient.addColorStop(1, theme.groundAccent);
     ctx.fillStyle = groundGradient;
-    ctx.fillRect(0, groundY, canvas.width, CONFIG.FLOOR_HEIGHT);
+    ctx.fillRect(0, groundY, getCanvasWidth(), CONFIG.FLOOR_HEIGHT);
     
     // Grass layer
     ctx.fillStyle = theme.grassColor;
-    ctx.fillRect(0, groundY, canvas.width, 25);
+    ctx.fillRect(0, groundY, getCanvasWidth(), 25);
     
     // Animated grass blades
     const grassOffset = (frameCount * 2) % 15;
-    for (let i = -grassOffset; i < canvas.width + 15; i += 8) {
+    for (let i = -grassOffset; i < getCanvasWidth() + 15; i += 8) {
         // Tall grass blade
         ctx.fillStyle = theme.grassDark;
         ctx.beginPath();
@@ -1094,7 +1128,7 @@ function drawCreativeDayGround(theme) {
     
     // Flowers
     const flowerOffset = (frameCount * 2) % 80;
-    for (let i = -flowerOffset + 20; i < canvas.width + 80; i += 80) {
+    for (let i = -flowerOffset + 20; i < getCanvasWidth() + 80; i += 80) {
         const flowerColor = theme.flowerColors[Math.floor(i / 80) % theme.flowerColors.length];
         drawFlower(i, groundY + 15, flowerColor);
     }
@@ -1116,18 +1150,18 @@ function drawClassicBackground() {
     ctx.imageSmoothingEnabled = false;
     
     // Sky - day gradient (light blue to slightly darker blue)
-    const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height - CONFIG.FLOOR_HEIGHT);
+    const skyGradient = ctx.createLinearGradient(0, 0, 0, getCanvasHeight() - CONFIG.FLOOR_HEIGHT);
     skyGradient.addColorStop(0, '#4EC0CA');
     skyGradient.addColorStop(1, '#4EAFCA');
     ctx.fillStyle = skyGradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height - CONFIG.FLOOR_HEIGHT);
+    ctx.fillRect(0, 0, getCanvasWidth(), getCanvasHeight() - CONFIG.FLOOR_HEIGHT);
     
     // Clouds - moving white pixel clouds
     ctx.fillStyle = 'white';
     const cloudSpeed = 0.3;
-    const cloudOffset1 = (frameCount * cloudSpeed) % (canvas.width + 100);
-    const cloudOffset2 = (frameCount * cloudSpeed + 250) % (canvas.width + 100);
-    const cloudOffset3 = (frameCount * cloudSpeed + 500) % (canvas.width + 100);
+    const cloudOffset1 = (frameCount * cloudSpeed) % (getCanvasWidth() + 100);
+    const cloudOffset2 = (frameCount * cloudSpeed + 250) % (getCanvasWidth() + 100);
+    const cloudOffset3 = (frameCount * cloudSpeed + 500) % (getCanvasWidth() + 100);
     
     drawPixelCloud(-100 + cloudOffset1, 60);
     drawPixelCloud(-100 + cloudOffset2, 110);
@@ -1135,36 +1169,36 @@ function drawClassicBackground() {
     
     // Ground base - tan/dirt color
     ctx.fillStyle = '#DED895';
-    ctx.fillRect(0, canvas.height - CONFIG.FLOOR_HEIGHT, canvas.width, CONFIG.FLOOR_HEIGHT);
+    ctx.fillRect(0, getCanvasHeight() - CONFIG.FLOOR_HEIGHT, getCanvasWidth(), CONFIG.FLOOR_HEIGHT);
     
     // Ground scrolling texture - vertical stripes
     ctx.fillStyle = '#C0BC71';
     const groundScroll = (frameCount * 2) % 48;
-    for (let i = -groundScroll; i < canvas.width + 48; i += 48) {
-        ctx.fillRect(i, canvas.height - CONFIG.FLOOR_HEIGHT, 24, CONFIG.FLOOR_HEIGHT);
+    for (let i = -groundScroll; i < getCanvasWidth() + 48; i += 48) {
+        ctx.fillRect(i, getCanvasHeight() - CONFIG.FLOOR_HEIGHT, 24, CONFIG.FLOOR_HEIGHT);
     }
     
     // Darker ground stripe pattern
     ctx.fillStyle = '#B8B565';
-    for (let i = -groundScroll + 12; i < canvas.width + 48; i += 48) {
-        ctx.fillRect(i, canvas.height - CONFIG.FLOOR_HEIGHT, 8, CONFIG.FLOOR_HEIGHT);
+    for (let i = -groundScroll + 12; i < getCanvasWidth() + 48; i += 48) {
+        ctx.fillRect(i, getCanvasHeight() - CONFIG.FLOOR_HEIGHT, 8, CONFIG.FLOOR_HEIGHT);
     }
     
     // Ground top border - green grass strip
     ctx.fillStyle = '#5EBF58';
-    ctx.fillRect(0, canvas.height - CONFIG.FLOOR_HEIGHT, canvas.width, 16);
+    ctx.fillRect(0, getCanvasHeight() - CONFIG.FLOOR_HEIGHT, getCanvasWidth(), 16);
     
     // Grass texture dark lines
     ctx.fillStyle = '#4E9D44';
-    for (let i = -groundScroll; i < canvas.width + 48; i += 12) {
-        ctx.fillRect(i, canvas.height - CONFIG.FLOOR_HEIGHT + 4, 3, 12);
-        ctx.fillRect(i + 6, canvas.height - CONFIG.FLOOR_HEIGHT + 2, 3, 10);
+    for (let i = -groundScroll; i < getCanvasWidth() + 48; i += 12) {
+        ctx.fillRect(i, getCanvasHeight() - CONFIG.FLOOR_HEIGHT + 4, 3, 12);
+        ctx.fillRect(i + 6, getCanvasHeight() - CONFIG.FLOOR_HEIGHT + 2, 3, 10);
     }
     
     // Grass highlights
     ctx.fillStyle = '#7AD96A';
-    for (let i = -groundScroll + 3; i < canvas.width + 48; i += 12) {
-        ctx.fillRect(i, canvas.height - CONFIG.FLOOR_HEIGHT + 6, 2, 8);
+    for (let i = -groundScroll + 3; i < getCanvasWidth() + 48; i += 12) {
+        ctx.fillRect(i, getCanvasHeight() - CONFIG.FLOOR_HEIGHT + 6, 2, 8);
     }
     
     ctx.imageSmoothingEnabled = true;
@@ -1208,7 +1242,7 @@ function drawFlower(x, y, color) {
 function gameLoop() {
     if (!gameState.running) return;
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, getCanvasWidth(), getCanvasHeight());
     
     drawBackground();
     
@@ -1339,6 +1373,26 @@ function displayLeaderboard(scores = null) {
 window.addEventListener('load', () => {
     resizeCanvas();
     
+    // Prevent scrolling on mobile
+    if (isMobile) {
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        
+        // Prevent pull-to-refresh on mobile
+        document.body.addEventListener('touchmove', (e) => {
+            if (e.target === canvas || e.target === document.body) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // Lock orientation to portrait if possible
+        if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('portrait').catch(() => {
+                // Orientation lock not supported or failed
+            });
+        }
+    }
+    
     // Load best score
     gameState.bestScore = parseInt(localStorage.getItem('bestScore') || '0');
     
@@ -1365,26 +1419,34 @@ document.getElementById('menu-btn').addEventListener('click', () => {
 });
 
 // Jump control - Canvas click
+// Jump control - Touch (optimized for mobile)
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (gameState.running && bird) {
+        bird.jump();
+    }
+}, { passive: false });
+
+// Prevent double-tap zoom on mobile
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+}, { passive: false });
+
+// Jump control - Click
 canvas.addEventListener('click', () => {
     if (gameState.running && bird) {
         bird.jump();
     }
 });
 
-// Jump control - Mouse left click (anywhere on document)
-document.addEventListener('mousedown', (e) => {
-    if (e.button === 0 && gameState.running && bird) {  // 0 = left click
-        bird.jump();
-    }
-});
-
-// Jump control - Touch
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (gameState.running && bird) {
-        bird.jump();
-    }
-});
+// Jump control - Mouse left click (anywhere on document) - Desktop only
+if (!isMobile) {
+    document.addEventListener('mousedown', (e) => {
+        if (e.button === 0 && gameState.running && bird) {  // 0 = left click
+            bird.jump();
+        }
+    });
+}
 
 // Jump control - Keyboard (Space or Arrow Up)
 document.addEventListener('keydown', (e) => {
