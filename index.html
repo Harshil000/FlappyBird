@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./index.css">
+    <title>Flappy Bird - Game</title>
+</head>
+<body>
+    <!-- Game Container -->
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <h1>🐦 Flappy Bird</h1>
+            <p>Click or Tap to Flap</p>
+            <button id="start-btn" class="btn">Start Game</button>
+            <div class="theme-selector">
+                <h3>Choose Theme:</h3>
+                <button class="theme-btn" data-theme="default">🌅 Day</button>
+                <button class="theme-btn" data-theme="night">🌙 Night</button>
+                <button class="theme-btn" data-theme="sunset">🌆 Sunset</button>
+                <button class="theme-btn" data-theme="classic">🎮 Classic</button>
+            </div>
+            <div class="bird-selector">
+                <h3>Choose Bird:</h3>
+                <button class="bird-btn" data-bird="yellow">🟡 Yellow</button>
+                <button class="bird-btn" data-bird="red">🔴 Red</button>
+                <button class="bird-btn" data-bird="blue">🔵 Blue</button>
+            </div>
+        </div>
+        
+        <!-- Game Over Screen -->
+        <div id="gameover-screen" class="screen hidden">
+            <h1>Game Over!</h1>
+            <div class="score-display">
+                <p>Score: <span id="final-score">0</span></p>
+                <p>Best: <span id="best-score">0</span></p>
+            </div>
+            <button id="restart-btn" class="btn">Play Again</button>
+            <button id="menu-btn" class="btn secondary">Main Menu</button>
+        </div>
+        
+        <!-- HUD -->
+        <div id="hud" class="hidden">
+            <div id="score">0</div>
+            <button id="mute-btn" class="icon-btn">🔊</button>
+        </div>
+        
+        <!-- Leaderboard -->
+        <div id="leaderboard">
+            <h3>🏆 Leaderboard</h3>
+            <ol id="leaderboard-list"></ol>
+        </div>
+    </div>
+
+    <script src="./index.js"></script>
+</body>
+</html>
