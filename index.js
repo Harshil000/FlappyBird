@@ -61,19 +61,44 @@ const THEMES = {
 // Bird Colors
 const BIRD_COLORS = {
     yellow: {
-        body: '#FFD700',
-        wing: '#FFA500',
-        belly: '#FFED4E'
+        body: '#FFC700',
+        belly: '#FFF4CC',
+        wing: '#FF8C00',
+        beak: '#FF8800',
+        beakHighlight: '#FFB84D',
+        eye: 'white',
+        pupil: 'black',
+        cheek: '#FF6B6B'
     },
     red: {
-        body: '#FF6B6B',
-        wing: '#FF4757',
-        belly: '#FF8E8E'
+        body: '#FF4444',
+        belly: '#FF8888',
+        wing: '#CC0000',
+        beak: '#FF6600',
+        beakHighlight: '#FF9944',
+        eye: 'white',
+        pupil: 'black',
+        cheek: '#FF99CC'
     },
     blue: {
-        body: '#4ECDC4',
-        wing: '#45B7D1',
-        belly: '#7EDCE2'
+        body: '#4A90E2',
+        belly: '#87CEEB',
+        wing: '#2E5C8A',
+        beak: '#FFA500',
+        beakHighlight: '#FFD700',
+        eye: 'white',
+        pupil: 'black',
+        cheek: '#FF99CC'
+    },
+    green: {
+        body: '#5EBF58',
+        belly: '#A8E6A1',
+        wing: '#3F8C3A',
+        beak: '#FF8800',
+        beakHighlight: '#FFB84D',
+        eye: 'white',
+        pupil: 'black',
+        cheek: '#90EE90'
     }
 };
 
@@ -222,80 +247,13 @@ class Bird {
     
     draw() {
         const colorScheme = BIRD_COLORS[gameState.currentBird];
-        const rotation = Math.min(Math.max(this.velocity * 0.05, -0.5), 0.5);
         
-        // Use classic pixel art style for classic theme
-        if (gameState.currentTheme === 'classic') {
-            this.drawClassicBird();
-            return;
-        }
-        
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(rotation);
-        
-        // Wing (behind body)
-        ctx.fillStyle = colorScheme.wing;
-        ctx.globalAlpha = 0.8;
-        ctx.beginPath();
-        const wingFlap = Math.sin(frameCount * 0.2) * 5;
-        ctx.ellipse(-5, 5 + wingFlap, 15, 10, Math.PI / 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-        
-        // Bird body
-        ctx.fillStyle = colorScheme.body;
-        ctx.beginPath();
-        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Belly highlight
-        ctx.fillStyle = colorScheme.belly;
-        ctx.beginPath();
-        ctx.arc(3, 8, this.size * 0.6, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Bird eye (white)
-        ctx.fillStyle = 'white';
-        ctx.beginPath();
-        ctx.arc(10, -5, 8, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Eye pupil
-        ctx.fillStyle = 'black';
-        ctx.beginPath();
-        ctx.arc(12, -5, 4, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Eye shine
-        ctx.fillStyle = 'white';
-        ctx.beginPath();
-        ctx.arc(13, -6, 2, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Bird beak
-        ctx.fillStyle = '#FF8C00';
-        ctx.beginPath();
-        ctx.moveTo(20, 0);
-        ctx.lineTo(30, 0);
-        ctx.lineTo(25, 5);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Beak shadow
-        ctx.fillStyle = '#D67500';
-        ctx.beginPath();
-        ctx.moveTo(20, 0);
-        ctx.lineTo(25, 5);
-        ctx.lineTo(20, 5);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.restore();
+        // Use pixel art style for all birds
+        this.drawPixelBird(colorScheme);
     }
     
-    drawClassicBird() {
-        // Original Flappy Bird pixel art - exact replica based on original game
+    drawPixelBird(colorScheme) {
+        // Animated pixel art bird (works for all themes)
         const rotation = Math.min(Math.max(this.velocity * 0.08, -0.5), 0.5);
         
         ctx.save();
@@ -308,8 +266,8 @@ class Bird {
         const wingFlap = Math.floor(frameCount / 8) % 3;
         const scale = 1.3; // Scale for visibility
         
-        // Main body - yellow
-        ctx.fillStyle = '#FFC700';
+        // Main body
+        ctx.fillStyle = colorScheme.body;
         ctx.fillRect(-12 * scale, -9 * scale, 24 * scale, 18 * scale);
         
         // Body rounded edges
@@ -318,13 +276,13 @@ class Bird {
         ctx.fillRect(-10 * scale, -10 * scale, 20 * scale, 1 * scale);
         ctx.fillRect(-10 * scale, 9 * scale, 20 * scale, 1 * scale);
         
-        // Belly/chest - lighter yellow/cream
-        ctx.fillStyle = '#FFF4CC';
+        // Belly/chest - lighter color
+        ctx.fillStyle = colorScheme.belly;
         ctx.fillRect(-8 * scale, -3 * scale, 16 * scale, 12 * scale);
         ctx.fillRect(-7 * scale, 9 * scale, 14 * scale, 1 * scale);
         
-        // Wing - orange with animation
-        ctx.fillStyle = '#FF8C00';
+        // Wing with animation
+        ctx.fillStyle = colorScheme.wing;
         if (wingFlap === 0) {
             // Wing up position
             ctx.fillRect(-10 * scale, -6 * scale, 10 * scale, 8 * scale);
@@ -340,11 +298,11 @@ class Bird {
         }
         
         // Eye white background
-        ctx.fillStyle = 'white';
+        ctx.fillStyle = colorScheme.eye;
         ctx.fillRect(6 * scale, -9 * scale, 8 * scale, 8 * scale);
         
         // Eye black pupil
-        ctx.fillStyle = 'black';
+        ctx.fillStyle = colorScheme.pupil;
         ctx.fillRect(9 * scale, -7 * scale, 5 * scale, 6 * scale);
         
         // Eye white shine
@@ -352,7 +310,7 @@ class Bird {
         ctx.fillRect(10 * scale, -6 * scale, 2 * scale, 2 * scale);
         
         // Beak upper part
-        ctx.fillStyle = '#FF8800';
+        ctx.fillStyle = colorScheme.beak;
         ctx.fillRect(12 * scale, -5 * scale, 8 * scale, 3 * scale);
         ctx.fillRect(20 * scale, -6 * scale, 2 * scale, 1 * scale);
         
@@ -361,19 +319,23 @@ class Bird {
         ctx.fillRect(18 * scale, -1 * scale, 2 * scale, 1 * scale);
         
         // Beak tip highlight
-        ctx.fillStyle = '#FFB84D';
+        ctx.fillStyle = colorScheme.beakHighlight;
         ctx.fillRect(12 * scale, -4 * scale, 2 * scale, 1 * scale);
         
         // Cheek blush
-        ctx.fillStyle = '#FF6B6B';
+        ctx.fillStyle = colorScheme.cheek;
         ctx.globalAlpha = 0.6;
         ctx.fillRect(4 * scale, 1 * scale, 5 * scale, 4 * scale);
         ctx.globalAlpha = 1;
         
-        // Tail feathers
-        ctx.fillStyle = '#FFC700';
+        // Tail feathers with animation
+        ctx.fillStyle = colorScheme.body;
         ctx.fillRect(-13 * scale, -3 * scale, 2 * scale, 6 * scale);
         ctx.fillRect(-15 * scale, -1 * scale, 2 * scale, 2 * scale);
+        
+        // Tail feather detail
+        ctx.fillStyle = colorScheme.wing;
+        ctx.fillRect(-14 * scale, -2 * scale, 1 * scale, 4 * scale);
         
         ctx.restore();
         ctx.imageSmoothingEnabled = true;
