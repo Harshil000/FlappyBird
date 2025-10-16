@@ -1474,8 +1474,3 @@ document.querySelectorAll('.bird-btn').forEach(btn => {
     });
 });
 
-// Mute button
-document.getElementById('mute-btn').addEventListener('click', function() {
-    gameState.muted = !gameState.muted;
-    this.textContent = gameState.muted ? '🔇' : '🔊';
-});

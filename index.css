@@ -255,30 +255,6 @@ body::before {
     letter-spacing: 1px;
 }
 
-.icon-btn {
-    width: 52px;
-    height: 52px;
-    font-size: 1.5rem;
-    background: rgba(255, 255, 255, 0.95);
-    border: 1.5px solid rgba(255, 255, 255, 0.3);
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    backdrop-filter: blur(10px);
-}
-
-.icon-btn:hover {
-    transform: scale(1.1);
-    background: white;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-    border-color: #4f46e5;
-}
-
-.icon-btn:active {
-    transform: scale(1.05);
-}
-
 /* Leaderboard */
 #leaderboard {
     position: absolute;
