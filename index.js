@@ -59,6 +59,21 @@ const THEMES = {
         pipeShadow: '#4a9d4a',
         pipeOutline: '#4CAF50',
         pixelated: true  // Enable pixelated classic look
+    },
+    tron: {
+        sky: ['#000814', '#001d3d', '#000814'],
+        ground: '#0a1128',
+        groundAccent: '#001845',
+        pipe: '#003566',
+        pipeHighlight: '#00d9ff',
+        pipeShadow: '#001233',
+        pipeOutline: '#00d9ff',
+        gridColor: '#00d9ff',
+        accentColor: '#ffd60a',
+        isGrid: true,
+        particles: true,
+        glow: true,
+        tronMode: true  // Special Tron rendering mode
     }
 };
 
@@ -252,7 +267,13 @@ class Bird {
     draw() {
         const colorScheme = BIRD_COLORS[gameState.currentBird];
         
-        // Use pixel art style for all birds
+        // Use Tron style bird for tron theme
+        if (gameState.currentTheme === 'tron') {
+            drawTronBird(this.x, this.y);
+            return;
+        }
+        
+        // Use pixel art style for all other birds
         this.drawPixelBird(colorScheme);
     }
     
@@ -382,6 +403,17 @@ class Pipe {
     
     draw() {
         const theme = THEMES[gameState.currentTheme];
+        
+        // Use Tron style for tron theme
+        if (gameState.currentTheme === 'tron') {
+            // Top pipe
+            drawTronPipe(this.x, 0, CONFIG.PIPE_WIDTH, this.topHeight);
+            // Bottom pipe
+            const bottomY = this.topHeight + this.gap;
+            const bottomHeight = canvas.height - bottomY - CONFIG.FLOOR_HEIGHT;
+            drawTronPipe(this.x, bottomY, CONFIG.PIPE_WIDTH, bottomHeight);
+            return;
+        }
         
         // Use classic pixel art pipes for classic theme
         if (gameState.currentTheme === 'classic') {
@@ -555,6 +587,12 @@ class Pipe {
 // Draw Background
 function drawBackground() {
     const theme = THEMES[gameState.currentTheme];
+    
+    // Tron background
+    if (gameState.currentTheme === 'tron') {
+        drawTronBackground();
+        return;
+    }
     
     // Classic background
     if (gameState.currentTheme === 'classic') {
@@ -748,6 +786,263 @@ function drawButterfly(x, y) {
     ctx.lineTo(-3, -12);
     ctx.moveTo(0, -8);
     ctx.lineTo(3, -12);
+    ctx.stroke();
+    
+    ctx.restore();
+}
+
+function drawTronBackground() {
+    const theme = THEMES.tron;
+    
+    // Deep dark gradient background
+    const bgGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    bgGradient.addColorStop(0, theme.sky[0]);
+    bgGradient.addColorStop(0.5, theme.sky[1]);
+    bgGradient.addColorStop(1, theme.sky[2]);
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Animated 3D Grid Floor
+    ctx.save();
+    const gridY = canvas.height - CONFIG.FLOOR_HEIGHT;
+    const time = frameCount * 0.02;
+    
+    // Perspective grid lines - receding into distance
+    ctx.strokeStyle = theme.gridColor;
+    ctx.lineWidth = 1;
+    ctx.shadowColor = theme.gridColor;
+    ctx.shadowBlur = 8;
+    
+    // Horizontal grid lines with perspective
+    for (let i = 0; i < 8; i++) {
+        const yOffset = i * 15;
+        const y = gridY + yOffset;
+        if (y > canvas.height) continue;
+        
+        const alpha = 1 - (i / 8) * 0.7;
+        ctx.globalAlpha = alpha;
+        
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+    }
+    
+    // Vertical grid lines with animated movement
+    const gridSpacing = 30;
+    const offset = (time * 50) % gridSpacing;
+    for (let i = -1; i < canvas.width / gridSpacing + 2; i++) {
+        const x = i * gridSpacing - offset;
+        const alpha = 0.6;
+        ctx.globalAlpha = alpha;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, gridY);
+        ctx.lineTo(x + gridSpacing * 0.3, canvas.height);
+        ctx.stroke();
+    }
+    
+    ctx.shadowBlur = 0;
+    ctx.globalAlpha = 1;
+    
+    // Floating digital particles
+    ctx.fillStyle = theme.accentColor;
+    ctx.shadowColor = theme.accentColor;
+    ctx.shadowBlur = 10;
+    for (let i = 0; i < 15; i++) {
+        const x = ((i * 73 + frameCount * 2) % canvas.width);
+        const y = ((i * 97 + frameCount * 0.5) % (canvas.height - CONFIG.FLOOR_HEIGHT));
+        const size = Math.sin(frameCount * 0.1 + i) * 2 + 3;
+        const alpha = Math.abs(Math.sin(frameCount * 0.05 + i * 0.5)) * 0.8;
+        
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(x, y, size, size);
+    }
+    
+    // Scanning lines effect
+    ctx.globalAlpha = 0.05;
+    ctx.fillStyle = theme.gridColor;
+    const scanY = (frameCount * 3) % canvas.height;
+    ctx.fillRect(0, scanY, canvas.width, 2);
+    ctx.fillRect(0, (scanY + canvas.height / 2) % canvas.height, canvas.width, 2);
+    
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    ctx.restore();
+    
+    // Data streams in background
+    drawDataStreams();
+}
+
+function drawDataStreams() {
+    const theme = THEMES.tron;
+    ctx.save();
+    
+    for (let i = 0; i < 3; i++) {
+        const x = (i * 150 + frameCount * 1.5) % (canvas.width + 100) - 50;
+        const startY = 50;
+        const endY = canvas.height - CONFIG.FLOOR_HEIGHT - 50;
+        
+        // Digital code stream
+        const gradient = ctx.createLinearGradient(0, startY, 0, endY);
+        gradient.addColorStop(0, 'rgba(0, 217, 255, 0)');
+        gradient.addColorStop(0.3, 'rgba(0, 217, 255, 0.8)');
+        gradient.addColorStop(0.7, 'rgba(0, 217, 255, 0.8)');
+        gradient.addColorStop(1, 'rgba(0, 217, 255, 0)');
+        
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = theme.gridColor;
+        ctx.shadowBlur = 10;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, startY);
+        for (let y = startY; y < endY; y += 10) {
+            ctx.lineTo(x + Math.sin(y * 0.1 + frameCount * 0.1) * 5, y);
+        }
+        ctx.stroke();
+        
+        // Binary digits
+        ctx.font = '10px monospace';
+        ctx.fillStyle = theme.gridColor;
+        ctx.shadowBlur = 5;
+        for (let j = 0; j < 5; j++) {
+            const digitY = startY + (frameCount * 2 + j * 50) % (endY - startY);
+            const digit = Math.random() > 0.5 ? '1' : '0';
+            ctx.globalAlpha = 0.7;
+            ctx.fillText(digit, x + Math.sin(digitY * 0.1) * 5, digitY);
+        }
+    }
+    
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+    ctx.restore();
+}
+
+function drawTronPipe(x, y, width, height) {
+    const theme = THEMES.tron;
+    
+    ctx.save();
+    ctx.shadowColor = theme.pipeOutline;
+    ctx.shadowBlur = 15;
+    
+    // Main pipe body - dark with grid pattern
+    ctx.fillStyle = theme.pipe;
+    ctx.fillRect(x, y, width, height);
+    
+    // Glowing edges
+    ctx.strokeStyle = theme.pipeOutline;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(x, y, width, height);
+    
+    // Internal circuit patterns
+    ctx.strokeStyle = theme.gridColor;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.6;
+    
+    // Vertical lines
+    for (let i = 1; i < 4; i++) {
+        const lineX = x + (width / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(lineX, y);
+        ctx.lineTo(lineX, y + height);
+        ctx.stroke();
+    }
+    
+    // Horizontal segments with animation
+    const segmentHeight = 30;
+    const offset = (frameCount * 2) % segmentHeight;
+    for (let yPos = y - offset; yPos < y + height; yPos += segmentHeight) {
+        ctx.beginPath();
+        ctx.moveTo(x, yPos);
+        ctx.lineTo(x + width, yPos);
+        ctx.stroke();
+    }
+    
+    // Pulsing energy core
+    const pulseAlpha = Math.abs(Math.sin(frameCount * 0.05)) * 0.5 + 0.3;
+    ctx.globalAlpha = pulseAlpha;
+    ctx.fillStyle = theme.accentColor;
+    ctx.shadowColor = theme.accentColor;
+    ctx.shadowBlur = 20;
+    
+    const coreWidth = width * 0.3;
+    const coreHeight = 40;
+    const coreX = x + (width - coreWidth) / 2;
+    const coreY = y + height / 2 - coreHeight / 2;
+    ctx.fillRect(coreX, coreY, coreWidth, coreHeight);
+    
+    ctx.restore();
+}
+
+function drawTronBird(x, y) {
+    const theme = THEMES.tron;
+    const wingPhase = Math.sin(frameCount * 0.2);
+    
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.shadowColor = theme.gridColor;
+    ctx.shadowBlur = 20;
+    
+    // Main body - diamond/angular shape
+    ctx.fillStyle = theme.gridColor;
+    ctx.beginPath();
+    ctx.moveTo(0, -12);
+    ctx.lineTo(12, 0);
+    ctx.lineTo(0, 12);
+    ctx.lineTo(-8, 0);
+    ctx.closePath();
+    ctx.fill();
+    
+    // Energy core
+    ctx.fillStyle = theme.accentColor;
+    ctx.shadowColor = theme.accentColor;
+    ctx.shadowBlur = 15;
+    ctx.beginPath();
+    ctx.arc(0, 0, 4, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Glowing outline
+    ctx.strokeStyle = theme.gridColor;
+    ctx.lineWidth = 2;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(0, -12);
+    ctx.lineTo(12, 0);
+    ctx.lineTo(0, 12);
+    ctx.lineTo(-8, 0);
+    ctx.closePath();
+    ctx.stroke();
+    
+    // Digital wings - light trails
+    ctx.strokeStyle = theme.accentColor;
+    ctx.lineWidth = 3;
+    ctx.shadowColor = theme.accentColor;
+    ctx.shadowBlur = 15;
+    
+    const wingLength = 15 + wingPhase * 5;
+    
+    // Top wing trail
+    ctx.beginPath();
+    ctx.moveTo(-8, -5);
+    ctx.lineTo(-8 - wingLength, -10 - wingPhase * 3);
+    ctx.stroke();
+    
+    // Bottom wing trail
+    ctx.beginPath();
+    ctx.moveTo(-8, 5);
+    ctx.lineTo(-8 - wingLength, 10 + wingPhase * 3);
+    ctx.stroke();
+    
+    // Circuit lines on body
+    ctx.strokeStyle = theme.accentColor;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-4, -4);
+    ctx.lineTo(4, 0);
+    ctx.moveTo(-4, 4);
+    ctx.lineTo(4, 0);
     ctx.stroke();
     
     ctx.restore();
